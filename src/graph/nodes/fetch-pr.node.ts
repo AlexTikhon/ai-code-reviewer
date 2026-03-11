@@ -1,15 +1,26 @@
 import type { ReviewerState, ReviewerStateUpdate } from "../state.js";
 import { getPullRequest, getPullRequestFiles } from "../../github/pulls.js";
+import { progressLabel, successLabel } from "../../utils/console.js";
 
 export async function fetchPrNode(
 	state: ReviewerState
 ): Promise<ReviewerStateUpdate> {
 	try {
+		if (!state.owner || !state.repo || state.pullNumber === undefined) {
+			throw new Error("PR review mode requires owner, repo, and pullNumber");
+		}
+
+		console.log(
+			`${progressLabel("[fetch]")} Loading PR ${state.owner}/${state.repo}#${state.pullNumber}...`
+		);
 		const pr = await getPullRequest(state.owner, state.repo, state.pullNumber);
 		const files = await getPullRequestFiles(
 			state.owner,
 			state.repo,
 			state.pullNumber
+		);
+		console.log(
+			`${successLabel("[fetch]")} Found ${files.length} PR file(s).`
 		);
 
 		return {

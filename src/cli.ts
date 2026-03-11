@@ -1,59 +1,172 @@
 import "dotenv/config";
 import { createReviewerGraph } from "./graph/reviewer.graph.js";
+import {
+	consoleStyles,
+	errorLabel,
+	progressLabel,
+	sectionTitle,
+	severityBadge
+} from "./utils/console.js";
 
-async function main() {
-	const [owner, repo, pullNumberRaw] = process.argv.slice(2);
+type CliArgs =
+	| {
+			reviewMode: "pr";
+			owner: string;
+			repo: string;
+			pullNumber: number;
+	  }
+	| {
+			reviewMode: "local";
+			localBaseRef?: string;
+			localRepoPath?: string;
+	  };
+
+function printUsage() {
+	console.error(sectionTitle("Usage"));
+	console.error(
+		`  ${consoleStyles.dim("npm run review -- <owner> <repo> <pullNumber>")}`
+	);
+	console.error(
+		`  ${consoleStyles.dim(
+			"npm run review -- --local [--base <ref>] [--repo <path>]"
+		)}`
+	);
+}
+
+function parseArgs(argv: string[]): CliArgs {
+	if (argv.includes("--local")) {
+		const baseIndex = argv.indexOf("--base");
+		const repoIndex = argv.indexOf("--repo");
+		const localBaseRef = baseIndex >= 0 ? argv[baseIndex + 1] : undefined;
+		const localRepoPath = repoIndex >= 0 ? argv[repoIndex + 1] : undefined;
+
+		if (baseIndex >= 0 && !localBaseRef) {
+			throw new Error("--base requires a ref value");
+		}
+
+		if (repoIndex >= 0 && !localRepoPath) {
+			throw new Error("--repo requires a path value");
+		}
+
+		return {
+			reviewMode: "local",
+			localBaseRef,
+			localRepoPath
+		};
+	}
+
+	const [owner, repo, pullNumberRaw] = argv;
 
 	if (!owner || !repo || !pullNumberRaw) {
-		console.error("Usage: npm run review -- <owner> <repo> <pullNumber>");
-		process.exit(1);
+		throw new Error("Missing required PR arguments");
 	}
 
 	const pullNumber = Number(pullNumberRaw);
 
 	if (Number.isNaN(pullNumber)) {
-		console.error("pullNumber must be a number");
+		throw new Error("pullNumber must be a number");
+	}
+
+	return {
+		reviewMode: "pr",
+		owner,
+		repo,
+		pullNumber
+	};
+}
+
+async function main() {
+	let args: CliArgs;
+	try {
+		args = parseArgs(process.argv.slice(2));
+	} catch (error) {
+		console.error(
+			`${errorLabel("[error]")} ${
+				error instanceof Error ? error.message : "Invalid arguments"
+			}`
+		);
+		printUsage();
 		process.exit(1);
 	}
 
 	const graph = createReviewerGraph();
 
-	const result = await graph.invoke({
-		owner,
-		repo,
-		pullNumber
-	});
+	if (args.reviewMode === "local") {
+		console.log(
+			args.localBaseRef
+				? `${progressLabel("[review]")} Starting local diff review against ${consoleStyles.bold(args.localBaseRef)}...`
+				: `${progressLabel("[review]")} Starting local diff review against ${consoleStyles.bold("HEAD")}...`
+		);
+		if (args.localRepoPath) {
+			console.log(
+				`${progressLabel("[review]")} Repository path: ${consoleStyles.bold(args.localRepoPath)}`
+			);
+		}
+	} else {
+		console.log(
+			`${progressLabel("[review]")} Starting PR review for ${consoleStyles.bold(
+				`${args.owner}/${args.repo}#${args.pullNumber}`
+			)}...`
+		);
+	}
+
+	const result = await graph.invoke(args);
 
 	if (result.errors?.length) {
-		console.error("Errors:");
+		console.error(`\n${sectionTitle("Errors")}\n`);
 		for (const error of result.errors) {
-			console.error(`- ${error}`);
+			console.error(`${errorLabel("*")} ${error}`);
 		}
 	}
 
-	console.log("\n=== SUMMARY ===\n");
+	console.log(`\n${sectionTitle("=== SUMMARY ===")}\n`);
 	console.log(result.summary ?? "No summary");
 
-	console.log("\n=== FINDINGS ===\n");
+	if (args.reviewMode === "local") {
+		console.log(`\n${sectionTitle("=== REVIEW TARGET ===")}\n`);
+		console.log(
+			args.localBaseRef
+				? `Local git diff against ${consoleStyles.bold(args.localBaseRef)}`
+				: `Local git diff against ${consoleStyles.bold("HEAD")}`
+		);
+		if (args.localRepoPath) {
+			console.log(`Repository: ${consoleStyles.bold(args.localRepoPath)}`);
+		}
+	} else {
+		console.log(`\n${sectionTitle("=== REVIEW TARGET ===")}\n`);
+		console.log(
+			consoleStyles.bold(`${args.owner}/${args.repo}#${args.pullNumber}`)
+		);
+	}
+
+	console.log(`\n${sectionTitle("=== FINDINGS ===")}\n`);
 	for (const [index, finding] of (result.findings ?? []).entries()) {
 		console.log(
-			`${index + 1}. [${finding.severity.toUpperCase()}] ${finding.filename}`
+			`${consoleStyles.bold(`${index + 1}.`)} [${severityBadge(
+				finding.severity
+			)}] ${consoleStyles.bold(finding.filename)}`
 		);
 		console.log(
-			`   ${finding.title} (${finding.category}, confidence=${finding.confidence})`
+			`   ${finding.title} ${consoleStyles.dim(
+				`(${finding.category}, confidence=${finding.confidence})`
+			)}`
 		);
 		console.log(`   ${finding.explanation}`);
 		if (finding.lineHint) {
-			console.log(`   Line hint: ${finding.lineHint}`);
+			console.log(
+				`   ${consoleStyles.magenta("Line hint:")} ${finding.lineHint}`
+			);
 		}
 		if (finding.suggestion) {
-			console.log(`   Suggestion: ${finding.suggestion}`);
+			console.log(
+				`   ${consoleStyles.green("Suggestion:")} ${finding.suggestion}`
+			);
 		}
 		console.log("");
 	}
 }
 
 main().catch((error) => {
-	console.error(error);
+	console.error(`${errorLabel("[fatal]")} ${String(error)}`);
 	process.exit(1);
 });

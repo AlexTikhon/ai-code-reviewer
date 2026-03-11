@@ -53,9 +53,12 @@ export type SkippedFile = {
 };
 
 export const reviewerStateAnnotation = Annotation.Root({
-	owner: Annotation<string>(),
-	repo: Annotation<string>(),
-	pullNumber: Annotation<number>(),
+	reviewMode: Annotation<"pr" | "local" | undefined>(),
+	owner: Annotation<string | undefined>(),
+	repo: Annotation<string | undefined>(),
+	pullNumber: Annotation<number | undefined>(),
+	localBaseRef: Annotation<string | undefined>(),
+	localRepoPath: Annotation<string | undefined>(),
 
 	prTitle: Annotation<string | undefined>(),
 	prBody: Annotation<string | undefined>(),

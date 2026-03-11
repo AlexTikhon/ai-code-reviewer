@@ -1,8 +1,10 @@
+import type { ReviewedFileType } from "../graph/state.js";
+
 export function buildReviewPrompt(input: {
 	prTitle: string;
 	prBody: string;
 	filename: string;
-	fileType: string;
+	fileType: ReviewedFileType;
 	patch: string;
 	isTruncated?: boolean;
 	originalPatchLength?: number;
@@ -37,6 +39,7 @@ Behavior by file type:
 
 Important truncation rule:
 - if the patch is truncated, review only the visible part of the diff
+- truncated patches keep only complete diff hunks from the beginning of the patch
 - do not assume the missing part is correct or incorrect
 - lower confidence when the issue depends on omitted context
 - mention uncertainty when truncation limits confidence

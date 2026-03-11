@@ -1,6 +1,6 @@
 # AI Code Reviewer
 
-A CLI tool for automated GitHub Pull Request review powered by an LLM.
+A CLI tool for automated GitHub Pull Request review and local `git diff` review powered by an LLM.
 
 The project fetches PR data from the GitHub API, runs changed files through a LangGraph-based review pipeline, and produces a concise summary plus structured findings for meaningful engineering issues in the diff.
 
@@ -8,6 +8,7 @@ The project fetches PR data from the GitHub API, runs changed files through a La
 
 - Fetches Pull Request metadata
 - Fetches all changed PR files with pagination
+- Reviews local working tree changes without creating a PR
 - Classifies files by type
 - Filters out files that are not suitable for review
 - Analyzes diffs with an LLM using structured output
@@ -62,6 +63,8 @@ OPENAI_API_KEY=your_openai_api_key
 
 ## Usage
 
+PR review:
+
 ```bash
 npm run review -- <owner> <repo> <pullNumber>
 ```
@@ -70,6 +73,40 @@ Example:
 
 ```bash
 npm run review -- vercel next.js 12345
+```
+
+Local diff review against `HEAD`:
+
+```bash
+npm run review -- --local
+```
+
+Local diff review against a base branch or ref:
+
+```bash
+npm run review -- --local --base main
+```
+
+Local diff review for a different repository path:
+
+```bash
+npm run review -- --local --repo c:\path\to\repo
+```
+
+You can combine both:
+
+```bash
+npm run review -- --local --base main --repo c:\path\to\repo
+```
+
+While the review is running, the CLI prints progress lines such as:
+
+```text
+[review] Starting local diff review against HEAD...
+[fetch] Collecting local git diff...
+[fetch] Found 6 changed local file(s).
+[analyze] Reviewing 4 file(s); skipped 2.
+[analyze] (1/4) src/cli.ts
 ```
 
 ## Example CLI Output
@@ -97,6 +134,35 @@ Review completed. Findings: high=1, medium=1, low=0. Skipped files: 2.
    Number(process.env.REVIEW_TIMEOUT_MS) can produce NaN, and the current patch does not validate that before using it in timeout logic.
    Line hint: added env parsing block
    Suggestion: Validate the parsed value and fall back to a safe default if it is missing or invalid.
+```
+
+Local diff example:
+
+```text
+=== SUMMARY ===
+
+Review completed. Findings: high=0, medium=1, low=1. Categories: error-handling=1, maintainability=1. Skipped files: 0. Skipped reasons: none.
+
+- src/graph/nodes/analyze.node.ts: Error handling improved, but the new catch branch loses the original cause in one code path.
+- src/cli.ts: Argument parsing is mostly clear, though the local mode branch still allows conflicting flags silently.
+
+=== REVIEW TARGET ===
+
+Local git diff against HEAD
+
+=== FINDINGS ===
+
+1. [MEDIUM] src/graph/nodes/analyze.node.ts
+   Wrapped error loses original cause (error-handling, confidence=medium)
+   The patch converts an unknown error into a generic message without preserving the original cause, which makes later debugging harder.
+   Line hint: catch block in analyzeNode
+   Suggestion: Include the original error message or attach it as a cause when building the final error string.
+
+2. [LOW] src/cli.ts
+   Conflicting local flags are not rejected explicitly (maintainability, confidence=medium)
+   The local CLI path accepts combinations of flags that may be ambiguous to future users and harder to extend safely.
+   Line hint: parseArgs local branch
+   Suggestion: Validate mutually exclusive flags up front and fail with a clear usage message.
 ```
 
 ## Output Format

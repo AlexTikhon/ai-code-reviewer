@@ -17,8 +17,8 @@ export const findingSchema = z.object({
 	confidence: findingConfidenceSchema,
 	title: z.string(),
 	explanation: z.string(),
-	lineHint: z.string().optional(),
-	suggestion: z.string().optional()
+	lineHint: z.string().nullable(),
+	suggestion: z.string().nullable()
 });
 
 export const reviewResponseSchema = z.object({
