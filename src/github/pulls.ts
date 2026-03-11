@@ -1,6 +1,8 @@
 import { githubRequest } from "./client.js";
 import type { PullRequestFile, PullRequestResponse } from "./types.js";
 
+const GITHUB_PAGE_SIZE = 100;
+
 export async function getPullRequest(
 	owner: string,
 	repo: string,
@@ -16,7 +18,20 @@ export async function getPullRequestFiles(
 	repo: string,
 	pullNumber: number
 ): Promise<PullRequestFile[]> {
-	return githubRequest<PullRequestFile[]>(
-		`/repos/${owner}/${repo}/pulls/${pullNumber}/files`
-	);
+	const files: PullRequestFile[] = [];
+	let page = 1;
+
+	while (true) {
+		const pageFiles = await githubRequest<PullRequestFile[]>(
+			`/repos/${owner}/${repo}/pulls/${pullNumber}/files?per_page=${GITHUB_PAGE_SIZE}&page=${page}`
+		);
+
+		files.push(...pageFiles);
+
+		if (pageFiles.length < GITHUB_PAGE_SIZE) {
+			return files;
+		}
+
+		page += 1;
+	}
 }

@@ -39,8 +39,13 @@ async function main() {
 		console.log(
 			`${index + 1}. [${finding.severity.toUpperCase()}] ${finding.filename}`
 		);
-		console.log(`   ${finding.title}`);
+		console.log(
+			`   ${finding.title} (${finding.category}, confidence=${finding.confidence})`
+		);
 		console.log(`   ${finding.explanation}`);
+		if (finding.lineHint) {
+			console.log(`   Line hint: ${finding.lineHint}`);
+		}
 		if (finding.suggestion) {
 			console.log(`   Suggestion: ${finding.suggestion}`);
 		}
