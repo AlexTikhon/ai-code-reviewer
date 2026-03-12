@@ -7,6 +7,7 @@ import {
 	sectionTitle,
 	severityBadge
 } from "./utils/console.js";
+import type { ReviewerFinding, ReviewerState } from "./graph/state.js";
 
 type CliArgs =
 	| {
@@ -75,6 +76,47 @@ function parseArgs(argv: string[]): CliArgs {
 	};
 }
 
+function mergeStateUpdate(
+	current: Partial<ReviewerState>,
+	update: Partial<ReviewerState>
+): Partial<ReviewerState> {
+	return {
+		...current,
+		...update,
+		errors: update.errors ?? current.errors,
+		findings: update.findings ?? current.findings,
+		filteredFiles: update.filteredFiles ?? current.filteredFiles,
+		files: update.files ?? current.files,
+		skippedFiles: update.skippedFiles ?? current.skippedFiles,
+		summary: update.summary ?? current.summary
+	};
+}
+
+function printFinding(finding: ReviewerFinding, index: number) {
+	console.log(
+		`${consoleStyles.bold(`${index}.`)} [${severityBadge(
+			finding.severity
+		)}] ${consoleStyles.bold(finding.filename)}`
+	);
+	console.log(
+		`   ${finding.title} ${consoleStyles.dim(
+			`(${finding.category}, confidence=${finding.confidence})`
+		)}`
+	);
+	console.log(`   ${finding.explanation}`);
+	if (finding.lineHint) {
+		console.log(
+			`   ${consoleStyles.magenta("Line hint:")} ${finding.lineHint}`
+		);
+	}
+	if (finding.suggestion) {
+		console.log(
+			`   ${consoleStyles.green("Suggestion:")} ${finding.suggestion}`
+		);
+	}
+	console.log("");
+}
+
 async function main() {
 	let args: CliArgs;
 	try {
@@ -110,7 +152,16 @@ async function main() {
 		);
 	}
 
-	const result = await graph.invoke(args);
+	let result: Partial<ReviewerState> = {};
+	const stream = await graph.stream(args, { streamMode: "updates" });
+
+	for await (const chunk of stream) {
+		for (const nodeUpdate of Object.values(
+			chunk as Record<string, Partial<ReviewerState>>
+		)) {
+			result = mergeStateUpdate(result, nodeUpdate);
+		}
+	}
 
 	if (result.errors?.length) {
 		console.error(`\n${sectionTitle("Errors")}\n`);
@@ -141,28 +192,7 @@ async function main() {
 
 	console.log(`\n${sectionTitle("=== FINDINGS ===")}\n`);
 	for (const [index, finding] of (result.findings ?? []).entries()) {
-		console.log(
-			`${consoleStyles.bold(`${index + 1}.`)} [${severityBadge(
-				finding.severity
-			)}] ${consoleStyles.bold(finding.filename)}`
-		);
-		console.log(
-			`   ${finding.title} ${consoleStyles.dim(
-				`(${finding.category}, confidence=${finding.confidence})`
-			)}`
-		);
-		console.log(`   ${finding.explanation}`);
-		if (finding.lineHint) {
-			console.log(
-				`   ${consoleStyles.magenta("Line hint:")} ${finding.lineHint}`
-			);
-		}
-		if (finding.suggestion) {
-			console.log(
-				`   ${consoleStyles.green("Suggestion:")} ${finding.suggestion}`
-			);
-		}
-		console.log("");
+		printFinding(finding, index + 1);
 	}
 }
 

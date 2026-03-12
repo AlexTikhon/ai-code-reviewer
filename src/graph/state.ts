@@ -35,7 +35,8 @@ export type SkippedFileReason =
 	| "large_patch"
 	| "missing_patch"
 	| "unsupported_file_type"
-	| "generated_file";
+	| "generated_file"
+	| "ignored_by_user";
 
 export type FilteredFile = {
 	filename: string;

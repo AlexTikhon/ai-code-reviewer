@@ -10,8 +10,10 @@ The project fetches PR data from the GitHub API, runs changed files through a La
 - Fetches all changed PR files with pagination
 - Reviews local working tree changes without creating a PR
 - Classifies files by type
+- Supports `.ai-reviewer-ignore` patterns for skipping user-selected paths
 - Filters out files that are not suitable for review
 - Analyzes diffs with an LLM using structured output
+- Streams progress and findings to the CLI while the graph is running
 - Returns a summary and a list of findings with severity, category, confidence, and line hints
 
 ## Pipeline
@@ -61,6 +63,24 @@ GITHUB_TOKEN=your_github_token
 OPENAI_API_KEY=your_openai_api_key
 ```
 
+## Ignore Rules
+
+Create a `.ai-reviewer-ignore` file in the repository root to skip files from review.
+
+- Empty lines and lines starting with `#` are ignored
+- `*`, `**`, and `?` glob patterns are supported
+- A trailing `/` matches a directory
+- `!pattern` re-includes files matched by an earlier ignore rule
+
+Example:
+
+```text
+dist/
+coverage/
+**/*.snap
+!src/critical-test.snap
+```
+
 ## Usage
 
 PR review:
@@ -107,6 +127,7 @@ While the review is running, the CLI prints progress lines such as:
 [fetch] Found 6 changed local file(s).
 [analyze] Reviewing 4 file(s); skipped 2.
 [analyze] (1/4) src/cli.ts
+[finding] #1 src/cli.ts Conflicting local flags are not rejected explicitly (low, maintainability, confidence=medium)
 ```
 
 ## Example CLI Output

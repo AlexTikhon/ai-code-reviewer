@@ -5,6 +5,7 @@ import type {
 	ReviewerStateUpdate,
 	SkippedFile
 } from "../state.js";
+import { loadIgnoreRules, isIgnoredPath } from "../../utils/ignore.js";
 
 const MAX_PATCH_LENGTH = 15000;
 
@@ -195,9 +196,22 @@ export async function filterFilesNode(
 	const files = state.files ?? [];
 	const filteredFiles: FilteredFile[] = [];
 	const skippedFiles: SkippedFile[] = [];
+	const ignoreRules = await loadIgnoreRules(
+		state.localRepoPath ?? process.cwd()
+	);
 
 	for (const file of files) {
 		const fileType = classifyFile(file.filename);
+
+		if (isIgnoredPath(file.filename, ignoreRules)) {
+			skippedFiles.push({
+				filename: file.filename,
+				fileType,
+				reason: "ignored_by_user",
+				details: "Matched .ai-reviewer-ignore."
+			});
+			continue;
+		}
 
 		if (!file.patch) {
 			skippedFiles.push({

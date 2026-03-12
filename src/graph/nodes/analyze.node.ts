@@ -14,6 +14,16 @@ import {
 	warningLabel
 } from "../../utils/console.js";
 
+function printLiveFinding(finding: ReviewerFinding, index: number): void {
+	console.log(
+		`${successLabel("[finding]")} ${consoleStyles.bold(`#${index}`)} ${consoleStyles.bold(
+			finding.filename
+		)} ${finding.title} ${consoleStyles.dim(
+			`(${finding.severity}, ${finding.category}, confidence=${finding.confidence})`
+		)}`
+	);
+}
+
 export async function analyzeNode(
 	state: ReviewerState
 ): Promise<ReviewerStateUpdate> {
@@ -43,8 +53,19 @@ export async function analyzeNode(
 				file.isTruncated ? ` ${warningLabel("[truncated]")}` : ""
 			}`
 		);
+		const structuredLlmWithRetry = structuredLlm.withRetry({
+			stopAfterAttempt: 3,
+			onFailedAttempt: (error) => {
+				const message =
+					error instanceof Error ? error.message : "Unknown analyze retry error";
+				console.log(
+					`${warningLabel("[analyze]")} Retry ${consoleStyles.bold(file.filename)} after error: ${message}`
+				);
+			}
+		});
+
 		try {
-			const result = await structuredLlm.invoke(
+			const result = await structuredLlmWithRetry.invoke(
 				buildReviewPrompt({
 					prTitle: state.prTitle ?? "",
 					prBody: state.prBody ?? "",
@@ -57,7 +78,7 @@ export async function analyzeNode(
 			);
 
 			for (const finding of result.findings) {
-				findings.push({
+				const nextFinding: ReviewerFinding = {
 					severity: finding.severity,
 					category: finding.category,
 					confidence: finding.confidence,
@@ -66,7 +87,9 @@ export async function analyzeNode(
 					explanation: finding.explanation,
 					lineHint: finding.lineHint ?? undefined,
 					suggestion: finding.suggestion ?? undefined
-				});
+				};
+				findings.push(nextFinding);
+				printLiveFinding(nextFinding, findings.length);
 			}
 
 			if (result.summary) {
