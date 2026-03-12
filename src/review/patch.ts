@@ -1,6 +1,6 @@
 const MAX_PATCH_LENGTH = 15000;
 
-function splitPatchIntoSections(patch: string): {
+export function splitPatchIntoSections(patch: string): {
 	preamble: string;
 	hunks: string[];
 } {

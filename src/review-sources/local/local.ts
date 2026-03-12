@@ -28,7 +28,7 @@ async function runGit(args: string[], cwd: string): Promise<string> {
 	return stdout;
 }
 
-function parseNameStatus(output: string): NameStatusEntry[] {
+export function parseNameStatus(output: string): NameStatusEntry[] {
 	return output
 		.split("\n")
 		.map((line) => line.trim())
@@ -60,7 +60,7 @@ function parseNameStatus(output: string): NameStatusEntry[] {
 		.filter((entry) => entry.filename);
 }
 
-function countLines(value: string): number {
+export function countLines(value: string): number {
 	if (!value) {
 		return 0;
 	}
@@ -68,7 +68,7 @@ function countLines(value: string): number {
 	return value.split(/\r?\n/).length;
 }
 
-function countPatchStats(patch: string): {
+export function countPatchStats(patch: string): {
 	additions: number;
 	deletions: number;
 	changes: number;
@@ -98,7 +98,7 @@ function countPatchStats(patch: string): {
 	};
 }
 
-function isProbablyBinary(buffer: Buffer): boolean {
+export function isProbablyBinary(buffer: Buffer): boolean {
 	if (!buffer.length) {
 		return false;
 	}

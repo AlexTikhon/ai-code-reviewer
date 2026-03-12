@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-type IgnoreRule = {
+export type IgnoreRule = {
 	pattern: string;
 	negated: boolean;
 };
@@ -61,7 +61,7 @@ function normalizePattern(rawPattern: string): {
 	};
 }
 
-function parseIgnoreFile(contents: string): IgnoreRule[] {
+export function parseIgnoreFile(contents: string): IgnoreRule[] {
 	return contents
 		.split(/\r?\n/)
 		.map((line) => line.trim())

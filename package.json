@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "review": "tsx src/cli.ts"
+    "review": "tsx src/cli.ts",
+    "test": "tsc -p tsconfig.test.json && node .test-dist/test/run.js"
   },
   "dependencies": {
     "@langchain/core": "^0.3.0",
