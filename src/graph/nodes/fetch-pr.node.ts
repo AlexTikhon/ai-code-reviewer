@@ -1,6 +1,9 @@
 import type { ReviewerState, ReviewerStateUpdate } from "../state.js";
-import { getPullRequest, getPullRequestFiles } from "../../github/pulls.js";
-import { progressLabel, successLabel } from "../../utils/console.js";
+import {
+	getPullRequest,
+	getPullRequestFiles
+} from "../../review-sources/github/pulls.js";
+import { progressLabel, successLabel } from "../../cli/console.js";
 
 export async function fetchPrNode(
 	state: ReviewerState

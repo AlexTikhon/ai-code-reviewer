@@ -12,7 +12,7 @@ import {
 	progressLabel,
 	successLabel,
 	warningLabel
-} from "../../utils/console.js";
+} from "../../cli/console.js";
 
 function printLiveFinding(finding: ReviewerFinding, index: number): void {
 	console.log(

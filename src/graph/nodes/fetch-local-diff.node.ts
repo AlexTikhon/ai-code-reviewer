@@ -1,6 +1,6 @@
 import type { ReviewerState, ReviewerStateUpdate } from "../state.js";
-import { getLocalDiff } from "../../git/local.js";
-import { progressLabel, successLabel } from "../../utils/console.js";
+import { progressLabel, successLabel } from "../../cli/console.js";
+import { getLocalDiff } from "../../review-sources/local/local.js";
 
 export async function fetchLocalDiffNode(
 	state: ReviewerState

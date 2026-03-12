@@ -31,14 +31,11 @@ The graph is defined in [src/graph/reviewer.graph.ts](c:/ForMe/Learning/ai-code-
 
 ## Project Structure
 
-- [src/cli.ts](c:/ForMe/Learning/ai-code-reviewer/src/cli.ts) - CLI entry point
-- [src/graph/state.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/state.ts) - shared graph state and review-related types
-- [src/graph/reviewer.graph.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/reviewer.graph.ts) - LangGraph pipeline definition
-- [src/graph/nodes/fetch-pr.node.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/nodes/fetch-pr.node.ts) - PR and file retrieval
-- [src/graph/nodes/filter-files.node.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/nodes/filter-files.node.ts) - file classification and filtering
-- [src/graph/nodes/analyze.node.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/nodes/analyze.node.ts) - per-file LLM analysis
-- [src/graph/nodes/finalize.node.ts](c:/ForMe/Learning/ai-code-reviewer/src/graph/nodes/finalize.node.ts) - final summary assembly
-- [src/github/](c:/ForMe/Learning/ai-code-reviewer/src/github) - GitHub API access
+- [src/cli.ts](c:/ForMe/Learning/ai-code-reviewer/src/cli.ts) - thin entry point
+- [src/cli/](c:/ForMe/Learning/ai-code-reviewer/src/cli) - argument parsing, console styling, output formatting, and review runner
+- [src/review/](c:/ForMe/Learning/ai-code-reviewer/src/review) - review domain types, ignore rules, file classification, and patch helpers
+- [src/review-sources/](c:/ForMe/Learning/ai-code-reviewer/src/review-sources) - GitHub and local diff adapters that produce review input files
+- [src/graph/](c:/ForMe/Learning/ai-code-reviewer/src/graph) - LangGraph state and orchestration nodes
 - [src/prompts/review.ts](c:/ForMe/Learning/ai-code-reviewer/src/prompts/review.ts) - review prompt construction
 - [src/schemas/review.schema.ts](c:/ForMe/Learning/ai-code-reviewer/src/schemas/review.schema.ts) - structured output schema
 

@@ -1,5 +1,5 @@
 import { githubRequest } from "./client.js";
-import type { PullRequestFile, PullRequestResponse } from "./types.js";
+import type { PullRequestFile, PullRequestResponse } from "../types.js";
 
 const GITHUB_PAGE_SIZE = 100;
 
